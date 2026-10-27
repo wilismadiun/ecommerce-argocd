@@ -1,0 +1,51 @@
+# apiVersion: batch/v1
+# kind: Job
+# metadata:
+#   name: user-service-migrate
+# spec:
+#   backoffLimit: 1
+#   activeDeadlineSeconds: 180
+
+#   template:
+#     spec:
+#       restartPolicy: Never
+
+#       containers:
+#         - name: migration
+#           image: irfanaufa07/ecommerce-user-service-migrations:v1.0
+#           imagePullPolicy: Always
+
+#           env:
+#           # configmap
+#           - name: DB_HOST
+#             valueFrom:
+#                 configMapKeyRef:
+#                   name: ecommerce-config
+#                   key: DB_HOST
+#           - name: DB_PORT
+#             valueFrom:
+#                 configMapKeyRef:
+#                   name: ecommerce-config
+#                   key: DB_PORT
+#           - name: DB_NAME
+#             valueFrom:
+#                 configMapKeyRef:
+#                   name: ecommerce-config
+#                   key: DB_NAME
+#           - name: DB_SSLMODE
+#             valueFrom:
+#                 configMapKeyRef:
+#                   name: ecommerce-config
+#                   key: DB_SSLMODE
+
+#           # secret
+#           - name: DB_USER
+#             valueFrom:
+#               secretKeyRef:
+#                 name: ecommerce-secret
+#                 key: DB_USER
+#           - name: DB_PASSWORD
+#             valueFrom:
+#               secretKeyRef:
+#                 name: ecommerce-secret
+#                 key: DB_PASSWORD

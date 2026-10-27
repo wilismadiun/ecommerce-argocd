@@ -45,19 +45,19 @@ spec:
             - name: POSTGRES_DB
               valueFrom:
                 configMapKeyRef:
-                  name: ecommerce-config
+                  name: config
                   key: DB_NAME
 
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: ecommerce-secret
+                  name: secret
                   key: DB_USER
 
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: ecommerce-secret
+                  name: secret
                   key: DB_PASSWORD
 
           volumeMounts:
