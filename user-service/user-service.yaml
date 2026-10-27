@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+spec:
+  type: NodePort
+  ports:
+  - port: 3000
+  selector:
+    app: user-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service-container
+        image: irfanaufa07/ecommerce-user-service:v1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: 20m
+        env:
+          # configmap
+          - name: DB_HOST
+            valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: DB_HOST
+          - name: DB_PORT
+            valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: DB_PORT
+          - name: DB_NAME
+            valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: DB_NAME
+          - name: DB_SSLMODE
+            valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: DB_SSLMODE
+
+          # secret
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: secret
+                key: DB_USER
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: secret
+                key: DB_PASSWORD
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: secret
+                key: JWT_SECRET
