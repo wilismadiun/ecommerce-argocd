@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app-argo
+  namespace: argocd
+spec:
+  project: default # untuk mengelompokkan beberapa aplikasi ke dalam satu projek
+  source:
+    repoURL: 'https://github.com/wilismadiun/ecommerce-argocd.git'
+    targetRevision: HEAD
+    path: 'user-service' # Lokasi folder tempat file deployment.yaml berada di Git
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: default # Namespace tujuan di cluster Kubernetes tempat app akan dideploy
+  syncPolicy:
+    automated:
+      prune: true # Menghapus resource di cluster jika dihapus dari Git
+      selfHeal: true # Otomatis sinkron jika ada yang mengubah resource secara manual di cluster
