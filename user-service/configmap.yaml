@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ecommerce-config
+  name: config
 data:
   DB_HOST: "postgres"
   DB_PORT: "5432"
