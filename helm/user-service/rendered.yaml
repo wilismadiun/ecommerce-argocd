@@ -1,0 +1,297 @@
+---
+# Source: user-service/templates/pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: user-service-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Source: user-service/templates/job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: user-service-migrate
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 180
+
+  template:
+    spec:
+      restartPolicy: Never
+
+      containers:
+        - name: migration
+          image: irfanaufa07/ecommerce-user-service-migrations:v1.0
+          imagePullPolicy: Always
+
+          env:
+          # configmap
+          - name: DB_HOST
+            valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: DB_HOST
+          - name: DB_PORT
+            valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: DB_PORT
+          - name: DB_NAME
+            valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: DB_NAME
+          - name: DB_SSLMODE
+            valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: DB_SSLMODE
+
+          # secret
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: ecommerce-secret
+                key: DB_USER
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ecommerce-secret
+                key: DB_PASSWORD
+---
+# Source: user-service/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: user-service-secret
+  annotations:
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/hook-weight": "-5"
+type: Opaque
+stringData:
+  DB_USER: "postgres"
+  DB_PASSWORD: "postgres123"
+  JWT_SECRET: "0ff69fbff76d8dd13513a51c2e6db40584b7aa27c8cca2eaf6427ede666ab6b8"
+---
+# Source: user-service/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-config
+  annotations:
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/hook-weight": "-5"
+data:
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "ecommerce-user-service"
+  DB_SSLMODE: "disable"
+---
+# Source: user-service/templates/pvc.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: user-service-pv-volume
+  labels:
+    type: local
+  annotations:
+    "helm.sh/resource-policy": keep   # Agar objek PV tidak ikut terhapus saat helm uninstall
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/hook-weight": "-3"
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
+---
+# Source: user-service/templates/deployment.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  annotations:
+    "helm.sh/hook": "post-install,post-upgrade"
+    "helm.sh/hook-weight": "1"
+  labels:
+    app: user-service
+spec:
+  type: NodePort
+  ports:
+  - port: 
+  selector:
+    app: user-service
+---
+# Source: user-service/templates/headless-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service-postgres
+  annotations:
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+  labels:
+    app: user-service-postgres
+spec:
+  ports:
+  - port: 5432
+  selector:
+    app: user-service-postgres
+  clusterIP: None
+---
+# Source: user-service/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  annotations:
+    "helm.sh/hook": "post-install,post-upgrade"
+    "helm.sh/hook-weight": "1"
+  labels:
+    app: user-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service-container
+        image: irfanaufa07/ecommerce-user-service:v1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: 20m
+        env:
+          # configmap
+          - name: DB_HOST
+            valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: DB_HOST
+          - name: DB_PORT
+            valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: DB_PORT
+          - name: DB_NAME
+            valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: DB_NAME
+          - name: DB_SSLMODE
+            valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: DB_SSLMODE
+
+          # secret
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: ecommerce-secret
+                key: DB_USER
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ecommerce-secret
+                key: DB_PASSWORD
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: ecommerce-secret
+                key: JWT_SECRET
+---
+# Source: user-service/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: user-service-postgres
+  annotations:
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+spec:
+  serviceName: user-service-postgres
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: user-service-postgres
+
+  template:
+    metadata:
+      labels:
+        app: user-service-postgres
+
+    spec:
+      containers:
+        - name: user-service-postgres
+          image: postgres:17
+
+          ports:
+            - containerPort: 5432
+              name: user-service-postgres
+
+          resources:
+            requests:
+              cpu: 20m
+
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: DB_NAME
+
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-secret
+                  key: DB_USER
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-secret
+                  key: DB_PASSWORD
+
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - user-service-postgres
+            initialDelaySeconds: 30
+            periodSeconds: 20
+
+      volumes:
+        - name: user-service-storage
+          persistentVolumeClaim:
+            claimName: user-service-pv-claim

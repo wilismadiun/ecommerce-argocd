@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: my-app-argo
+  name: ecommerce-user-service
   namespace: argocd
 spec:
   project: default # untuk mengelompokkan beberapa aplikasi ke dalam satu projek
   source:
     repoURL: 'https://github.com/wilismadiun/ecommerce-argocd.git'
     targetRevision: HEAD
-    path: 'user-service' # Lokasi folder tempat file deployment.yaml berada di Git
+    path: 'helm/user-service' # Lokasi folder tempat file deployment.yaml berada di Git
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: default # Namespace tujuan di cluster Kubernetes tempat app akan dideploy

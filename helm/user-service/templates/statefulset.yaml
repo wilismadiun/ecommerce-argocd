@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  serviceName: {{ .Release.Name }}-postgres
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-postgres
+
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-postgres
+
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17
+
+          ports:
+            - containerPort: 5432
+              name: postgres
+
+          resources:
+            requests:
+              cpu: 20m
+
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-config
+                  key: DB_NAME
+
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: DB_USER
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: DB_PASSWORD
+
+          volumeMounts:
+            - name: {{ .Release.Name }}-storage
+              mountPath: /var/lib/postgresql/data
+
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Release.Name }}-user
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Release.Name }}-user
+            initialDelaySeconds: 30
+            periodSeconds: 20
+
+      volumes:
+        - name: {{ .Release.Name }}-storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-pv-claim
