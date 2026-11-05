@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ecommerce-store-service
+  name: store-service
   namespace: argocd
 spec:
   project: default # untuk mengelompokkan beberapa aplikasi ke dalam satu projek
