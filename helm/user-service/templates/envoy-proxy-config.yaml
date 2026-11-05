@@ -2,9 +2,6 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
   name: my-envoy-proxy
-  namespace: envoy-gateway-system
-  annotations:
-    argocd.argoproj.io/sync-wave: "6"
 spec:
   provider:
     kubernetes:
