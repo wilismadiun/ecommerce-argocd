@@ -19,9 +19,9 @@ spec:
           kind: Service
           name: user-service
           port: 3000
-          weight: 7
+          weight: 3
         - group: ""
           kind: Service
           name: user-service-v2
           port: 3000
-          weight: 3
+          weight: 7
