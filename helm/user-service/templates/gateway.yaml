@@ -6,6 +6,11 @@ metadata:
     argocd.argoproj.io/sync-wave: "5"
 spec:
   gatewayClassName: eg
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: my-envoy-proxy
   listeners:
     - name: http
       protocol: HTTP
